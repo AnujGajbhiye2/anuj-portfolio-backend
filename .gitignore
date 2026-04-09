@@ -41,3 +41,4 @@ coverage/
 .agents/*
 skills-lock.*
 .gitignore
+/src/generated/prisma

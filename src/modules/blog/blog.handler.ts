@@ -9,27 +9,27 @@ import {
 } from './blog.repository';
 import type { CreateBlogInput, UpdateBlogInput } from './blog.schema';
 
-export function listAllBlogsHandler(_req: Request, res: Response, next: NextFunction): void {
+export async function listAllBlogsHandler(_req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
-    const posts = listAllPosts();
+    const posts = await listAllPosts();
     res.json({ posts, total: posts.length });
   } catch (err) {
     next(err);
   }
 }
 
-export function listBlogsHandler(_req: Request, res: Response, next: NextFunction): void {
+export async function listBlogsHandler(_req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
-    const posts = listPublished();
+    const posts = await listPublished();
     res.json({ posts, total: posts.length });
   } catch (err) {
     next(err);
   }
 }
 
-export function getBlogHandler(req: Request, res: Response, next: NextFunction): void {
+export async function getBlogHandler(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
-    const post = findBySlug(req.params.slug);
+    const post = await findBySlug(req.params.slug);
     if (!post) {
       res.status(404).json({ error: 'Post not found', requestId: req.id });
       return;
@@ -40,9 +40,9 @@ export function getBlogHandler(req: Request, res: Response, next: NextFunction):
   }
 }
 
-export function createBlogHandler(req: Request, res: Response, next: NextFunction): void {
+export async function createBlogHandler(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
-    const post = createPost(req.body as CreateBlogInput);
+    const post = await createPost(req.body as CreateBlogInput);
     req.log.info({ postId: post.id, slug: post.slug }, 'blog post created');
     res.status(201).json({ post });
   } catch (err) {
@@ -50,7 +50,7 @@ export function createBlogHandler(req: Request, res: Response, next: NextFunctio
   }
 }
 
-export function updateBlogHandler(req: Request, res: Response, next: NextFunction): void {
+export async function updateBlogHandler(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const id = Number(req.params.id);
     if (!Number.isInteger(id) || id < 1) {
@@ -58,7 +58,7 @@ export function updateBlogHandler(req: Request, res: Response, next: NextFunctio
       return;
     }
 
-    const post = updatePost(id, req.body as UpdateBlogInput);
+    const post = await updatePost(id, req.body as UpdateBlogInput);
     if (!post) {
       res.status(404).json({ error: 'Post not found', requestId: req.id });
       return;
@@ -71,7 +71,7 @@ export function updateBlogHandler(req: Request, res: Response, next: NextFunctio
   }
 }
 
-export function deleteBlogHandler(req: Request, res: Response, next: NextFunction): void {
+export async function deleteBlogHandler(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const id = Number(req.params.id);
     if (!Number.isInteger(id) || id < 1) {
@@ -79,7 +79,7 @@ export function deleteBlogHandler(req: Request, res: Response, next: NextFunctio
       return;
     }
 
-    const deleted = removePost(id);
+    const deleted = await removePost(id);
     if (!deleted) {
       res.status(404).json({ error: 'Post not found', requestId: req.id });
       return;
