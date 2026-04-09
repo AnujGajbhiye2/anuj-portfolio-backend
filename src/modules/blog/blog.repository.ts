@@ -1,135 +1,112 @@
-import { getDb } from '../../db/client';
-import type { BlogPostRow } from '../../types/db';
+import { Prisma } from '@prisma/client';
+import { prisma } from '../../db/client';
 import type { CreateBlogInput, UpdateBlogInput } from './blog.schema';
 
-// Shape returned to API consumers — tags as string[], not raw JSON string
-export interface BlogPost extends Omit<BlogPostRow, 'tags'> {
+// Tags come back from Prisma as JsonValue — cast to string[] at the boundary
+export type BlogPost = {
+  id: number;
+  slug: string;
+  title: string;
+  summary: string | null;
+  content: string;
   tags: string[];
+  coverImageUrl: string | null;
+  readingTime: number;
+  published: boolean;
+  publishedAt: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+function normalizeTags(tags: Prisma.JsonValue): string[] {
+  return Array.isArray(tags) ? (tags as string[]) : [];
 }
 
-// ─── Helpers ───────────────────────────────────────────────────────────────
+const listSelect = {
+  id: true,
+  slug: true,
+  title: true,
+  summary: true,
+  tags: true,
+  coverImageUrl: true,
+  readingTime: true,
+  published: true,
+  publishedAt: true,
+  createdAt: true,
+  updatedAt: true,
+} as const;
 
-function parseTags(row: BlogPostRow): BlogPost {
-  return { ...row, tags: JSON.parse(row.tags) as string[] };
+export async function listAllPosts(): Promise<Omit<BlogPost, 'content'>[]> {
+  const rows = await prisma.blogPost.findMany({
+    select: listSelect,
+    orderBy: { createdAt: 'desc' },
+  });
+  return rows.map((r) => ({ ...r, tags: normalizeTags(r.tags) }));
 }
 
-// ─── Public reads ──────────────────────────────────────────────────────────
-
-// Admin — all posts including drafts, newest first
-export function listAllPosts(): Omit<BlogPost, 'content'>[] {
-  const rows = getDb()
-    .prepare(
-      `SELECT id, slug, title, summary, tags, cover_image_url,
-              reading_time, published, published_at, created_at, updated_at
-       FROM blog_posts
-       ORDER BY created_at DESC`,
-    )
-    .all() as Omit<BlogPostRow, 'content'>[];
-
-  return rows.map((r) => ({ ...r, tags: JSON.parse(r.tags) as string[] }));
+export async function listPublished(): Promise<Omit<BlogPost, 'content'>[]> {
+  const rows = await prisma.blogPost.findMany({
+    where: { published: true },
+    select: listSelect,
+    orderBy: [{ publishedAt: 'desc' }, { createdAt: 'desc' }],
+  });
+  return rows.map((r) => ({ ...r, tags: normalizeTags(r.tags) }));
 }
 
-export function listPublished(): Omit<BlogPost, 'content'>[] {
-  const rows = getDb()
-    .prepare(
-      `SELECT id, slug, title, summary, tags, cover_image_url,
-              reading_time, published, published_at, created_at, updated_at
-       FROM blog_posts
-       WHERE published = 1
-       ORDER BY published_at DESC, created_at DESC`,
-    )
-    .all() as Omit<BlogPostRow, 'content'>[];
-
-  return rows.map((r) => ({ ...r, tags: JSON.parse(r.tags) as string[] }));
+export async function findBySlug(slug: string): Promise<BlogPost | null> {
+  const row = await prisma.blogPost.findFirst({
+    where: { slug, published: true },
+  });
+  return row ? { ...row, tags: normalizeTags(row.tags) } : null;
 }
 
-export function findBySlug(slug: string): BlogPost | null {
-  const row = getDb()
-    .prepare(`SELECT * FROM blog_posts WHERE slug = ? AND published = 1`)
-    .get(slug) as BlogPostRow | undefined;
-
-  return row ? parseTags(row) : null;
-}
-
-// ─── Admin writes ──────────────────────────────────────────────────────────
-
-export function createPost(data: CreateBlogInput): BlogPost {
-  const publishedAt = data.published ? new Date().toISOString() : null;
-
-  const row = getDb()
-    .prepare(
-      `INSERT INTO blog_posts
-         (slug, title, summary, content, tags, cover_image_url, reading_time, published, published_at)
-       VALUES
-         (@slug, @title, @summary, @content, @tags, @cover_image_url, @reading_time, @published, @published_at)
-       RETURNING *`,
-    )
-    .get({
+export async function createPost(data: CreateBlogInput): Promise<BlogPost> {
+  const row = await prisma.blogPost.create({
+    data: {
       slug: data.slug,
       title: data.title,
       summary: data.summary ?? null,
       content: data.content,
-      tags: JSON.stringify(data.tags),
-      cover_image_url: data.cover_image_url ?? null,
-      reading_time: data.reading_time,
-      published: data.published ? 1 : 0,
-      published_at: publishedAt,
-    }) as BlogPostRow;
-
-  return parseTags(row);
+      tags: data.tags,
+      coverImageUrl: data.cover_image_url ?? null,
+      readingTime: data.reading_time,
+      published: data.published ?? false,
+      publishedAt: data.published ? new Date() : null,
+    },
+  });
+  return { ...row, tags: normalizeTags(row.tags) };
 }
 
-export function updatePost(id: number, data: UpdateBlogInput): BlogPost | null {
-  const existing = getDb()
-    .prepare(`SELECT * FROM blog_posts WHERE id = ?`)
-    .get(id) as BlogPostRow | undefined;
-
+export async function updatePost(id: number, data: UpdateBlogInput): Promise<BlogPost | null> {
+  const existing = await prisma.blogPost.findUnique({ where: { id } });
   if (!existing) return null;
 
-  // Merge incoming fields with existing values
-  const published =
-    data.published !== undefined ? (data.published ? 1 : 0) : existing.published;
+  const becomingPublished = data.published === true && !existing.published;
 
-  // Set published_at only when transitioning from draft → published
-  const publishedAt =
-    data.published === true && !existing.published_at
-      ? new Date().toISOString()
-      : existing.published_at;
-
-  const row = getDb()
-    .prepare(
-      `UPDATE blog_posts SET
-         title           = @title,
-         summary         = @summary,
-         content         = @content,
-         tags            = @tags,
-         cover_image_url = @cover_image_url,
-         reading_time    = @reading_time,
-         published       = @published,
-         published_at    = @published_at,
-         updated_at      = datetime('now')
-       WHERE id = @id
-       RETURNING *`,
-    )
-    .get({
-      id,
-      title: data.title ?? existing.title,
-      summary: data.summary ?? existing.summary,
-      content: data.content ?? existing.content,
-      tags: data.tags !== undefined ? JSON.stringify(data.tags) : existing.tags,
-      cover_image_url: data.cover_image_url ?? existing.cover_image_url,
-      reading_time: data.reading_time ?? existing.reading_time,
-      published,
-      published_at: publishedAt,
-    }) as BlogPostRow;
-
-  return parseTags(row);
+  const row = await prisma.blogPost.update({
+    where: { id },
+    data: {
+      ...(data.title !== undefined && { title: data.title }),
+      ...(data.summary !== undefined && { summary: data.summary }),
+      ...(data.content !== undefined && { content: data.content }),
+      ...(data.tags !== undefined && { tags: data.tags }),
+      ...(data.cover_image_url !== undefined && { coverImageUrl: data.cover_image_url }),
+      ...(data.reading_time !== undefined && { readingTime: data.reading_time }),
+      ...(data.published !== undefined && { published: data.published }),
+      ...(becomingPublished && { publishedAt: new Date() }),
+    },
+  });
+  return { ...row, tags: normalizeTags(row.tags) };
 }
 
-export function removePost(id: number): boolean {
-  const result = getDb()
-    .prepare(`DELETE FROM blog_posts WHERE id = ?`)
-    .run(id);
-
-  return result.changes > 0;
+export async function removePost(id: number): Promise<boolean> {
+  try {
+    await prisma.blogPost.delete({ where: { id } });
+    return true;
+  } catch (e) {
+    if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2025') {
+      return false;
+    }
+    throw e;
+  }
 }

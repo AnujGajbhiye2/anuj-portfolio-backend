@@ -1,34 +1,19 @@
-import { getDb } from '../../db/client';
+import { prisma } from '../../db/client';
 import type { ContactInput } from './contact.schema';
-import type { ContactSubmissionRow } from '../../types/db';
+import type { ContactSubmission } from '@prisma/client';
 
-export function insertContact(data: ContactInput): ContactSubmissionRow {
-  const db = getDb();
-
-  const result = db
-    .prepare(
-      `INSERT INTO contact_submissions (name, email, message)
-       VALUES (@name, @email, @message)
-       RETURNING *`,
-    )
-    .get(data) as ContactSubmissionRow;
-
-  return result;
+export async function insertContact(data: ContactInput): Promise<ContactSubmission> {
+  return prisma.contactSubmission.create({ data });
 }
 
-export function listContacts(limit = 50, offset = 0): ContactSubmissionRow[] {
-  return getDb()
-    .prepare(
-      `SELECT * FROM contact_submissions
-       ORDER BY created_at DESC
-       LIMIT ? OFFSET ?`,
-    )
-    .all(limit, offset) as ContactSubmissionRow[];
+export async function listContacts(limit = 50, offset = 0): Promise<ContactSubmission[]> {
+  return prisma.contactSubmission.findMany({
+    orderBy: { createdAt: 'desc' },
+    take: limit,
+    skip: offset,
+  });
 }
 
-export function countContacts(): number {
-  const row = getDb()
-    .prepare(`SELECT COUNT(*) as count FROM contact_submissions`)
-    .get() as { count: number };
-  return row.count;
+export async function countContacts(): Promise<number> {
+  return prisma.contactSubmission.count();
 }

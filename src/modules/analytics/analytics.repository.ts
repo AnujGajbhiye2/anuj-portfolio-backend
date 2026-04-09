@@ -1,6 +1,5 @@
-import { getDb } from '../../db/client';
+import { prisma } from '../../db/client';
 import type { PageViewInput } from './analytics.schema';
-import type { PageViewRow } from '../../types/db';
 
 interface RecordPageViewArgs extends PageViewInput {
   user_agent: string | null;
@@ -8,20 +7,17 @@ interface RecordPageViewArgs extends PageViewInput {
   request_id: string;
 }
 
-export function recordPageView(data: RecordPageViewArgs): void {
-  getDb()
-    .prepare(
-      `INSERT INTO page_views (path, title, referrer, user_agent, ip_hash, request_id)
-       VALUES (@path, @title, @referrer, @user_agent, @ip_hash, @request_id)`,
-    )
-    .run({
+export async function recordPageView(data: RecordPageViewArgs): Promise<void> {
+  await prisma.pageView.create({
+    data: {
       path: data.path,
       title: data.title ?? null,
       referrer: data.referrer ?? null,
-      user_agent: data.user_agent,
-      ip_hash: data.ip_hash,
-      request_id: data.request_id,
-    });
+      userAgent: data.user_agent,
+      ipHash: data.ip_hash,
+      requestId: data.request_id,
+    },
+  });
 }
 
 export interface PageViewSummary {
@@ -30,38 +26,31 @@ export interface PageViewSummary {
   topPages: { path: string; count: number }[];
 }
 
-export function getPageViewSummary(): PageViewSummary {
-  const db = getDb();
+export async function getPageViewSummary(): Promise<PageViewSummary> {
+  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
 
-  const { total } = db
-    .prepare(`SELECT COUNT(*) as total FROM page_views`)
-    .get() as { total: number };
+  const [totalViews, viewsLast7Days, topPagesRaw] = await Promise.all([
+    prisma.pageView.count(),
+    prisma.pageView.count({ where: { createdAt: { gte: sevenDaysAgo } } }),
+    prisma.pageView.groupBy({
+      by: ['path'],
+      _count: { path: true },
+      orderBy: { _count: { path: 'desc' } },
+      take: 5,
+    }),
+  ]);
 
-  const { recent } = db
-    .prepare(
-      `SELECT COUNT(*) as recent FROM page_views
-       WHERE created_at >= datetime('now', '-7 days')`,
-    )
-    .get() as { recent: number };
-
-  const topPages = db
-    .prepare(
-      `SELECT path, COUNT(*) as count FROM page_views
-       GROUP BY path
-       ORDER BY count DESC
-       LIMIT 5`,
-    )
-    .all() as { path: string; count: number }[];
-
-  return { totalViews: total, viewsLast7Days: recent, topPages };
+  return {
+    totalViews,
+    viewsLast7Days,
+    topPages: topPagesRaw.map((r) => ({ path: r.path, count: r._count.path })),
+  };
 }
 
-export function getRecentPageViews(limit = 20): Pick<PageViewRow, 'id' | 'path' | 'title' | 'created_at'>[] {
-  return getDb()
-    .prepare(
-      `SELECT id, path, title, created_at FROM page_views
-       ORDER BY created_at DESC
-       LIMIT ?`,
-    )
-    .all(limit) as Pick<PageViewRow, 'id' | 'path' | 'title' | 'created_at'>[];
+export async function getRecentPageViews(limit = 20) {
+  return prisma.pageView.findMany({
+    select: { id: true, path: true, title: true, createdAt: true },
+    orderBy: { createdAt: 'desc' },
+    take: limit,
+  });
 }
