@@ -38,3 +38,6 @@ Thumbs.db
 
 # Coverage
 coverage/
+.agents/*
+skills-lock.*
+.gitignore
