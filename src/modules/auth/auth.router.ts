@@ -12,10 +12,13 @@ const router = Router();
 const ADMIN_PASSWORD_HASH = bcrypt.hashSync(env.ADMIN_PASSWORD, 10);
 
 const COOKIE_NAME = 'token';
+const COOKIE_SAME_SITE: 'lax' | 'none' = isDev ? 'lax' : 'none';
 const COOKIE_OPTIONS = {
   httpOnly: true,                    // not readable by JS
   secure: !isDev,                    // HTTPS only in production
-  sameSite: 'strict' as const,       // no cross-site requests
+  // Separate frontend/backend domains in production need SameSite=None + Secure
+  // so the browser will include the auth cookie on cross-origin requests.
+  sameSite: COOKIE_SAME_SITE,
   maxAge: 8 * 60 * 60 * 1000,       // 8 hours in ms
   path: '/',
 };
@@ -53,7 +56,12 @@ router.post('/login', (req: Request, res: Response): void => {
 
 // POST /api/auth/logout
 router.post('/logout', (_req: Request, res: Response): void => {
-  res.clearCookie(COOKIE_NAME, { path: '/' });
+  res.clearCookie(COOKIE_NAME, {
+    path: '/',
+    httpOnly: true,
+    secure: !isDev,
+    sameSite: COOKIE_SAME_SITE,
+  });
   res.status(204).send();
 });
 
