@@ -6,6 +6,7 @@ import {
   createPost,
   updatePost,
   removePost,
+  findById,
 } from './blog.repository';
 import type { CreateBlogInput, UpdateBlogInput } from './blog.schema';
 
@@ -30,6 +31,24 @@ export async function listBlogsHandler(_req: Request, res: Response, next: NextF
 export async function getBlogHandler(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const post = await findBySlug(req.params.slug);
+    if (!post) {
+      res.status(404).json({ error: 'Post not found', requestId: req.id });
+      return;
+    }
+    res.json({ post });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function getBlogFullHandler(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id) || id < 1) {
+      res.status(400).json({ error: 'Invalid post id', requestId: req.id });
+      return;
+    }
+    const post = await findById(id);
     if (!post) {
       res.status(404).json({ error: 'Post not found', requestId: req.id });
       return;

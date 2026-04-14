@@ -60,6 +60,14 @@ export async function findBySlug(slug: string): Promise<BlogPost | null> {
   return row ? { ...row, tags: normalizeTags(row.tags) } : null;
 }
 
+export async function findById(id: number): Promise<BlogPost | null> {
+  const row = await prisma.blogPost.findUnique({
+    where: { id },
+  });
+  return row ? { ...row, tags: normalizeTags(row.tags) } : null;
+  
+}
+
 export async function createPost(data: CreateBlogInput): Promise<BlogPost> {
   const row = await prisma.blogPost.create({
     data: {
