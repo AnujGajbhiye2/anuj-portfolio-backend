@@ -46,7 +46,7 @@ export function createApp(): express.Application {
   // credentials: true is required for cookies to be sent cross-origin
   app.use(
     cors({
-      origin: env.CORS_ORIGIN,
+      origin: env.CORS_ORIGIN.length === 1 ? env.CORS_ORIGIN[0] : env.CORS_ORIGIN,
       credentials: true,
       methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
       allowedHeaders: ['Content-Type', 'x-admin-secret'],
