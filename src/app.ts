@@ -74,7 +74,6 @@ export function createApp(): express.Application {
     res.status(404).json({ error: "Not found", requestId: _req.id });
   });
 
-
   // ─── Error handler (must be last) ──────────────────────────────────────────
   Sentry.setupExpressErrorHandler(app);
   app.use(errorHandler);

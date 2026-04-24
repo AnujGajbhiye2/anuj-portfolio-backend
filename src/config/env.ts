@@ -1,26 +1,22 @@
-import { z } from 'zod';
+import { z } from "zod";
 
 // Zod parses and validates process.env at startup.
 // If any required variable is missing or invalid the server exits immediately
 // with a clear error rather than failing silently at runtime.
 const envSchema = z.object({
   NODE_ENV: z
-    .enum(['development', 'production', 'test'])
-    .default('development'),
+    .enum(["development", "production", "test"])
+    .default("development"),
   PORT: z.coerce.number().int().positive().default(3001),
-  ADMIN_SECRET: z
-    .string()
-    .min(8, 'ADMIN_SECRET must be at least 8 characters'),
+  ADMIN_SECRET: z.string().min(8, "ADMIN_SECRET must be at least 8 characters"),
   ADMIN_PASSWORD: z
     .string()
-    .min(8, 'ADMIN_PASSWORD must be at least 8 characters'),
-  JWT_SECRET: z
-    .string()
-    .min(32, 'JWT_SECRET must be at least 32 characters'),
+    .min(8, "ADMIN_PASSWORD must be at least 8 characters"),
+  JWT_SECRET: z.string().min(32, "JWT_SECRET must be at least 32 characters"),
   CORS_ORIGIN: z
     .string()
-    .default('http://localhost:3000')
-    .transform((val) => val.split(',').map((s) => s.trim()))
+    .default("http://localhost:3000")
+    .transform((val) => val.split(",").map((s) => s.trim()))
     .pipe(z.array(z.string().url())),
   DATABASE_URL: z.string().url(),
 });
@@ -28,17 +24,19 @@ const envSchema = z.object({
 const result = envSchema.safeParse(process.env);
 
 if (!result.success) {
-  console.error('\n❌  Invalid environment variables — server cannot start:\n');
+  console.error("\n❌  Invalid environment variables — server cannot start:\n");
   const errors = result.error.flatten().fieldErrors;
   for (const [key, messages] of Object.entries(errors)) {
-    console.error(`  ${key}: ${messages?.join(', ')}`);
+    console.error(`  ${key}: ${messages?.join(", ")}`);
   }
-  console.error('\nCopy .env.example → .env and fill in all required values.\n');
+  console.error(
+    "\nCopy .env.example → .env and fill in all required values.\n",
+  );
   process.exit(1);
 }
 
 export const env = result.data;
 
 // Convenience booleans used throughout the app
-export const isDev = env.NODE_ENV === 'development';
-export const isProd = env.NODE_ENV === 'production';
+export const isDev = env.NODE_ENV === "development";
+export const isProd = env.NODE_ENV === "production";

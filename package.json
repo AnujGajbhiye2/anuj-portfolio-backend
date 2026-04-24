@@ -6,10 +6,12 @@
   "scripts": {
     "dev": "tsx watch --env-file=.env src/index.ts",
     "build": "prisma generate && tsc",
+    "format": "prettier --write \"src/**/*.{ts,js,json,md}\"",
     "start": "node dist/index.js",
     "test": "vitest",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint src/"
+    "lint": "eslint src/",
+    "prepare": "husky"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",
@@ -36,6 +38,8 @@
     "@types/node": "^22.13.0",
     "@types/supertest": "^7.2.0",
     "eslint": "^9.20.0",
+    "husky": "^9.1.7",
+    "prettier": "^3.8.3",
     "supertest": "^7.2.2",
     "tsx": "^4.19.2",
     "typescript": "^5.7.3",

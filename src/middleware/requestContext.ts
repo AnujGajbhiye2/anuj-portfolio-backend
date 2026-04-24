@@ -1,6 +1,6 @@
-import { randomUUID } from 'crypto';
-import type { Request, Response, NextFunction } from 'express';
-import { logger } from '../config/logger';
+import { randomUUID } from "crypto";
+import type { Request, Response, NextFunction } from "express";
+import { logger } from "../config/logger";
 
 // Attaches a unique request ID and a child logger to every incoming request.
 //
@@ -17,13 +17,14 @@ export function requestContext(
   req.log = logger.child({ requestId: req.id });
 
   // Log the incoming request at debug level (visible in dev, not in prod)
-  req.log.debug({ method: req.method, url: req.url }, '→ incoming');
+  req.log.debug({ method: req.method, url: req.url }, "→ incoming");
 
   // Log the outgoing response once it finishes
   const start = Date.now();
-  res.on('finish', () => {
+  res.on("finish", () => {
     const ms = Date.now() - start;
-    const level = res.statusCode >= 500 ? 'error' : res.statusCode >= 400 ? 'warn' : 'info';
+    const level =
+      res.statusCode >= 500 ? "error" : res.statusCode >= 400 ? "warn" : "info";
     req.log[level](
       { method: req.method, url: req.url, statusCode: res.statusCode, ms },
       `← ${res.statusCode}`,

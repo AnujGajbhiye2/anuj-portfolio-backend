@@ -1,6 +1,6 @@
-import { Prisma } from '@prisma/client';
-import { prisma } from '../../db/client';
-import type { CreateBlogInput, UpdateBlogInput } from './blog.schema';
+import { Prisma } from "@prisma/client";
+import { prisma } from "../../db/client";
+import type { CreateBlogInput, UpdateBlogInput } from "./blog.schema";
 
 // Tags come back from Prisma as JsonValue — cast to string[] at the boundary
 export type BlogPost = {
@@ -36,19 +36,19 @@ const listSelect = {
   updatedAt: true,
 } as const;
 
-export async function listAllPosts(): Promise<Omit<BlogPost, 'content'>[]> {
+export async function listAllPosts(): Promise<Omit<BlogPost, "content">[]> {
   const rows = await prisma.blogPost.findMany({
     select: listSelect,
-    orderBy: { createdAt: 'desc' },
+    orderBy: { createdAt: "desc" },
   });
   return rows.map((r) => ({ ...r, tags: normalizeTags(r.tags) }));
 }
 
-export async function listPublished(): Promise<Omit<BlogPost, 'content'>[]> {
+export async function listPublished(): Promise<Omit<BlogPost, "content">[]> {
   const rows = await prisma.blogPost.findMany({
     where: { published: true },
     select: listSelect,
-    orderBy: [{ publishedAt: 'desc' }, { createdAt: 'desc' }],
+    orderBy: [{ publishedAt: "desc" }, { createdAt: "desc" }],
   });
   return rows.map((r) => ({ ...r, tags: normalizeTags(r.tags) }));
 }
@@ -65,7 +65,6 @@ export async function findById(id: number): Promise<BlogPost | null> {
     where: { id },
   });
   return row ? { ...row, tags: normalizeTags(row.tags) } : null;
-  
 }
 
 export async function createPost(data: CreateBlogInput): Promise<BlogPost> {
@@ -85,7 +84,10 @@ export async function createPost(data: CreateBlogInput): Promise<BlogPost> {
   return { ...row, tags: normalizeTags(row.tags) };
 }
 
-export async function updatePost(id: number, data: UpdateBlogInput): Promise<BlogPost | null> {
+export async function updatePost(
+  id: number,
+  data: UpdateBlogInput,
+): Promise<BlogPost | null> {
   const existing = await prisma.blogPost.findUnique({ where: { id } });
   if (!existing) return null;
 
@@ -98,8 +100,12 @@ export async function updatePost(id: number, data: UpdateBlogInput): Promise<Blo
       ...(data.summary !== undefined && { summary: data.summary }),
       ...(data.content !== undefined && { content: data.content }),
       ...(data.tags !== undefined && { tags: data.tags }),
-      ...(data.cover_image_url !== undefined && { coverImageUrl: data.cover_image_url }),
-      ...(data.reading_time !== undefined && { readingTime: data.reading_time }),
+      ...(data.cover_image_url !== undefined && {
+        coverImageUrl: data.cover_image_url,
+      }),
+      ...(data.reading_time !== undefined && {
+        readingTime: data.reading_time,
+      }),
       ...(data.published !== undefined && { published: data.published }),
       ...(becomingPublished && { publishedAt: new Date() }),
     },
@@ -112,7 +118,10 @@ export async function removePost(id: number): Promise<boolean> {
     await prisma.blogPost.delete({ where: { id } });
     return true;
   } catch (e) {
-    if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2025') {
+    if (
+      e instanceof Prisma.PrismaClientKnownRequestError &&
+      e.code === "P2025"
+    ) {
       return false;
     }
     throw e;

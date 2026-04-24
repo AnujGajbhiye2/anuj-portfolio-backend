@@ -1,5 +1,5 @@
-import { prisma } from '../../db/client';
-import type { PageViewInput } from './analytics.schema';
+import { prisma } from "../../db/client";
+import type { PageViewInput } from "./analytics.schema";
 
 interface RecordPageViewArgs extends PageViewInput {
   user_agent: string | null;
@@ -26,6 +26,13 @@ export interface PageViewSummary {
   topPages: { path: string; count: number }[];
 }
 
+export interface PageViewDetail {
+  id: number;
+  path: string;
+  title: string | null;
+  createdAt: Date;
+}
+
 export async function getPageViewSummary(): Promise<PageViewSummary> {
   const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
 
@@ -33,9 +40,9 @@ export async function getPageViewSummary(): Promise<PageViewSummary> {
     prisma.pageView.count(),
     prisma.pageView.count({ where: { createdAt: { gte: sevenDaysAgo } } }),
     prisma.pageView.groupBy({
-      by: ['path'],
+      by: ["path"],
       _count: { path: true },
-      orderBy: { _count: { path: 'desc' } },
+      orderBy: { _count: { path: "desc" } },
       take: 5,
     }),
   ]);
@@ -47,10 +54,12 @@ export async function getPageViewSummary(): Promise<PageViewSummary> {
   };
 }
 
-export async function getRecentPageViews(limit = 20) {
+export async function getRecentPageViews(
+  limit = 20,
+): Promise<PageViewDetail[]> {
   return prisma.pageView.findMany({
     select: { id: true, path: true, title: true, createdAt: true },
-    orderBy: { createdAt: 'desc' },
+    orderBy: { createdAt: "desc" },
     take: limit,
   });
 }

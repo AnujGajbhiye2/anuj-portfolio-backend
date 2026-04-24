@@ -1,5 +1,5 @@
-import type { Request, Response, NextFunction } from 'express';
-import type { ZodSchema } from 'zod';
+import type { Request, Response, NextFunction } from "express";
+import type { ZodSchema } from "zod";
 
 // Generic middleware factory — wraps any Zod schema into an Express middleware.
 //
@@ -14,7 +14,7 @@ export function validate(schema: ZodSchema) {
 
     if (!result.success) {
       res.status(400).json({
-        error: 'Validation failed',
+        error: "Validation failed",
         // flatten() gives { fieldErrors: { field: [messages] }, formErrors: [] }
         issues: result.error.flatten().fieldErrors,
         requestId: req.id,

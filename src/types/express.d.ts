@@ -1,4 +1,4 @@
-import type { Logger } from 'pino';
+import type { Logger } from "pino";
 
 // Augments the Express Request type so every handler has typed access to:
 //   req.id  — unique UUID for this request (set by requestContext middleware)

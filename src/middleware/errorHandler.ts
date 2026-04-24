@@ -1,5 +1,5 @@
-import type { Request, Response, NextFunction } from 'express';
-import { isProd } from '../config/env';
+import type { Request, Response, NextFunction } from "express";
+import { isProd } from "../config/env";
 
 // Global Express error handler — must be registered LAST in the middleware chain.
 // Any call to next(err) or any thrown error in async route handlers lands here.
@@ -17,7 +17,8 @@ export function errorHandler(
   // _next is intentionally unused — prefix signals this to ESLint.
   _next: NextFunction,
 ): void {
-  const message = err instanceof Error ? err.message : 'An unexpected error occurred';
+  const message =
+    err instanceof Error ? err.message : "An unexpected error occurred";
   const stack = err instanceof Error ? err.stack : undefined;
 
   // Log full details server-side (stack trace always visible in logs)
@@ -25,7 +26,7 @@ export function errorHandler(
 
   // Send sanitised response to client
   res.status(500).json({
-    error: isProd ? 'Internal server error' : message,
+    error: isProd ? "Internal server error" : message,
     requestId: req.id,
   });
 }

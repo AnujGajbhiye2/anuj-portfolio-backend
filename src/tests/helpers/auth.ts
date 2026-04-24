@@ -1,9 +1,10 @@
-import jwt from 'jsonwebtoken';
+import jwt from "jsonwebtoken";
 
-const SECRET = process.env.JWT_SECRET || 'test-jwt-secret-that-is-at-least-32-chars!!';
+const SECRET =
+  process.env.JWT_SECRET || "test-jwt-secret-that-is-at-least-32-chars!!";
 
 export function makeAdminToken(): string {
-  return jwt.sign({ role: 'admin' }, SECRET, { expiresIn: '1h' });
+  return jwt.sign({ role: "admin" }, SECRET, { expiresIn: "1h" });
 }
 
 // Cookie header value for authenticated requests.
