@@ -12,7 +12,7 @@ import { contactRouter } from "./modules/contact/contact.router";
 import { blogRouter } from "./modules/blog/blog.router";
 import { analyticsRouter } from "./modules/analytics/analytics.router";
 import { authRouter } from "./modules/auth/auth.router";
-import Sentry from "@sentry/node";
+import * as Sentry from "@sentry/node";
 
 // ─── Rate limiters ─────────────────────────────────────────────────────────
 // Returns JSON instead of the default plain-text response so clients always

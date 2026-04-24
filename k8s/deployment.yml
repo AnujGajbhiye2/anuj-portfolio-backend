@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend-deployment
+  namespace: demo-ns
+  labels:
+    app: backend
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+    spec:
+      containers:
+        - name: portfolio-backend
+          image: oroborous1/portfolio-backend:latest
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "65Mi"
+            limits:
+              cpu: "500m"
+              memory: "130Mi"
+          envFrom:
+            - secretRef:
+                name: backend-secrets
+          ports:
+            - containerPort: 3002
