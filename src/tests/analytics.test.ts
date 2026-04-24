@@ -26,13 +26,11 @@ describe("Analytics routes", () => {
 
   describe("POST /api/analytics/page-view", () => {
     it("returns 202 immediately on valid payload", async () => {
-      const res = await request(app)
-        .post("/api/analytics/page-view")
-        .send({
-          path: "/about",
-          title: "About",
-          referrer: "https://google.com",
-        });
+      const res = await request(app).post("/api/analytics/page-view").send({
+        path: "/about",
+        title: "About",
+        referrer: "https://google.com",
+      });
 
       expect(res.status).toBe(202);
     });
