@@ -21,7 +21,12 @@ router.get("/", listBlogsHandler);
 // ─── Admin reads ───────────────────────────────────────────────────────────
 // IMPORTANT: registered before /:slug so Express doesn't match 'admin' as a slug
 router.get("/admin/all", jwtGuard, listAllBlogsHandler);
-router.post("/admin/upload-image", jwtGuard, upload.single("image"), uploadImageHandler);
+router.post(
+  "/admin/upload-image",
+  jwtGuard,
+  upload.single("image"),
+  uploadImageHandler,
+);
 
 router.get("/admin/:id", jwtGuard, getBlogFullHandler); // For admin preview/editing — slug lookup is public but id lookup requires auth
 

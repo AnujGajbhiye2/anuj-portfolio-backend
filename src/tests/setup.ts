@@ -7,3 +7,6 @@ process.env.ADMIN_SECRET = "test-admin-secret-12345";
 process.env.ADMIN_PASSWORD = "test-password-12345";
 process.env.JWT_SECRET = "test-jwt-secret-that-is-at-least-32-chars!!";
 process.env.CORS_ORIGIN = "http://localhost:3000";
+process.env.CLOUDINARY_CLOUD_NAME = "test-cloud-name";
+process.env.CLOUDINARY_API_KEY = "test-api-key";
+process.env.CLOUDINARY_API_SECRET = "test-api-secret";

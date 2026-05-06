@@ -1,8 +1,8 @@
-import { Readable } from 'stream';
-import multer from 'multer';
-import { v2 as cloudinary } from 'cloudinary';
-import type { Request, Response, NextFunction } from 'express';
-import { env } from '../../config/env';
+import { Readable } from "stream";
+import multer from "multer";
+import { v2 as cloudinary } from "cloudinary";
+import type { Request, Response, NextFunction } from "express";
+import { env } from "../../config/env";
 
 cloudinary.config({
   cloud_name: env.CLOUDINARY_CLOUD_NAME,
@@ -15,21 +15,25 @@ export const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 5 * 1024 * 1024, files: 1 },
   fileFilter(_req, file, cb) {
-    const allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+    const allowed = ["image/jpeg", "image/png", "image/webp", "image/gif"];
     if (allowed.includes(file.mimetype)) {
       cb(null, true);
     } else {
-      cb(new Error('Only JPEG, PNG, WebP, and GIF images are allowed'));
+      cb(new Error("Only JPEG, PNG, WebP, and GIF images are allowed"));
     }
   },
 });
 
-function uploadToCloudinary(buffer: Buffer, folder = 'blog'): Promise<{ url: string; publicId: string }> {
+function uploadToCloudinary(
+  buffer: Buffer,
+  folder = "blog",
+): Promise<{ url: string; publicId: string }> {
   return new Promise((resolve, reject) => {
     const stream = cloudinary.uploader.upload_stream(
-      { folder, resource_type: 'image' },
+      { folder, resource_type: "image" },
       (error, result) => {
-        if (error || !result) return reject(error ?? new Error('Upload failed'));
+        if (error || !result)
+          return reject(error ?? new Error("Upload failed"));
         resolve({ url: result.secure_url, publicId: result.public_id });
       },
     );
@@ -44,7 +48,7 @@ export async function uploadImageHandler(
 ): Promise<void> {
   try {
     if (!req.file) {
-      res.status(400).json({ error: 'No file provided' });
+      res.status(400).json({ error: "No file provided" });
       return;
     }
     const { url, publicId } = await uploadToCloudinary(req.file.buffer);
