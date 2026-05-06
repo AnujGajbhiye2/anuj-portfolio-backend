@@ -3,11 +3,12 @@ kind: Service
 metadata:
   name: backend-service
 spec:
-  type: NodePort
+  # type: LoadBalancer
   selector:
     app: backend
   ports:
     - protocol: TCP
       port: 3002
       targetPort: 3002
-      nodePort: 30002
+      # nodePort: 30002
+      

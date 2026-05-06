@@ -19,6 +19,9 @@ const envSchema = z.object({
     .transform((val) => val.split(",").map((s) => s.trim()))
     .pipe(z.array(z.string().url())),
   DATABASE_URL: z.string().url(),
+  CLOUDINARY_CLOUD_NAME: z.string().min(1),
+  CLOUDINARY_API_KEY: z.string().min(1),
+  CLOUDINARY_API_SECRET: z.string().min(1),
 });
 
 const result = envSchema.safeParse(process.env);
