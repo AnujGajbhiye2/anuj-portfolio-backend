@@ -12,6 +12,7 @@ import { contactRouter } from "./modules/contact/contact.router";
 import { blogRouter } from "./modules/blog/blog.router";
 import { analyticsRouter } from "./modules/analytics/analytics.router";
 import { authRouter } from "./modules/auth/auth.router";
+import { mockRouter } from "./modules/mock/mock.router";
 import * as Sentry from "@sentry/node";
 
 // ─── Rate limiters ─────────────────────────────────────────────────────────
@@ -69,6 +70,7 @@ export function createApp(): express.Application {
   app.use("/api/contact", contactLimiter, contactRouter);
   app.use("/api/blogs", blogRouter);
   app.use("/api/analytics", analyticsLimiter, analyticsRouter);
+  app.use("/api/mock", mockRouter);
   // ─── 404 catch-all ─────────────────────────────────────────────────────────
   app.use((_req: Request, res: Response) => {
     res.status(404).json({ error: "Not found", requestId: _req.id });
